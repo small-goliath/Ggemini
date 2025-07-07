@@ -1,0 +1,63 @@
+@startuml Sequence_Diagram
+
+!theme vibrant
+
+title Ggmini 애플리케이션 시퀀스 다이어그램
+
+actor 사용자
+participant "프론트엔드 (React)" as Frontend
+participant "백엔드 (FastAPI)" as Backend
+participant "Google Drive API" as GDrive
+participant "LangChain" as LangChain
+participant "벡터 저장소 (FAISS)" as VectorStore
+participant "Google Generative AI" as GenAI
+
+== 서버 시작 시 초기화 ==
+activate Backend
+Backend -> GDrive: 공유 드라이브에서 문서 로드(GoogleDriveLoader 사용)
+activate GDrive
+GDrive --> Backend: 문서 반환
+deactivate GDrive
+
+Backend -> LangChain: 문서를 텍스트 청크로 분할(RecursiveCharacterTextSplitter)
+activate LangChain
+LangChain --> Backend: 텍스트 청크 반환
+deactivate LangChain
+
+Backend -> GenAI: 텍스트 청크에 대한 임베딩 요청(GoogleGenerativeAIEmbeddings)
+activate GenAI
+GenAI --> Backend: 임베딩 반환
+deactivate GenAI
+
+Backend -> VectorStore: 청크와 임베딩으로 벡터 저장소 생성(FAISS.from_documents)
+activate VectorStore
+VectorStore --> Backend: 벡터 저장소 생성 확인
+deactivate VectorStore
+deactivate Backend
+
+== Q&A 처리 ==
+사용자 -> Frontend: 1. 질문 입력 및 제출
+activate Frontend
+Frontend -> Backend: 2. 질문과 함께 /api/ask 호출 (POST)
+activate Backend
+
+Backend -> VectorStore: 3. 관련 문서 검색(vector_store.as_retriever)
+activate VectorStore
+VectorStore --> Backend: 4. 관련 문서 반환
+deactivate VectorStore
+
+Backend -> LangChain: 5. 질문과 문서를 사용하여 검색 체인 호출(create_retrieval_chain)
+activate LangChain
+LangChain -> GenAI: 6. 컨텍스트(문서)와 질문을 LLM에 전송(ChatGoogleGenerativeAI)
+activate GenAI
+GenAI --> LangChain: 7. 생성된 답변 반환
+deactivate GenAI
+LangChain --> Backend: 8. 최종 답변 반환
+deactivate LangChain
+
+Backend --> Frontend: 9. JSON 형식으로 답변 응답
+deactivate Backend
+Frontend -> 사용자: 10. 채팅창에 답변 표시
+deactivate Frontend
+
+@enduml

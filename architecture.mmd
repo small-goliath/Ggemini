@@ -1,0 +1,44 @@
+flowchart TD
+ subgraph subGraph0["사용자 영역"]
+        User["👤 사용자"]
+  end
+ subgraph subGraph1["Frontend"]
+        WebApp["Web App"]
+  end
+ subgraph subGraph2["Backend<br />(FastAPI + LangChain)"]
+        APIServer{"FastAPI Server"}
+        Orchestrator["LangChain Orchestrator"]
+        VectorStore(("Vector Store<br>FAISS"))
+  end
+ subgraph subGraph3["Google Cloud Platform"]
+        GoogleDrive[("Google Shared Drive")]
+        LLM{{"Google Gemini LLM"}}
+  end
+    User -- 1 질문 입력 --> WebApp
+    WebApp -- 2 API 요청 (POST /api/query) --> APIServer
+    APIServer -- 3 LangChain 실행 --> Orchestrator
+    Orchestrator -- 4 질문 벡터화 및 유사 문서 검색 --> VectorStore
+    VectorStore -- 5 관련성 높은 문서(Context) 반환 --> Orchestrator
+    Orchestrator -- 6 Context + 질문으로 프롬프트 구성 --> LLM
+    LLM -- 7 답변 생성 --> Orchestrator
+    Orchestrator -- 8 생성된 답변 반환 --> APIServer
+    APIServer -- 9 API 응답 --> WebApp
+    WebApp -- 10 화면에 답변 표시 --> User
+    Orchestrator -. A 문서 로드 .-> GoogleDrive
+    GoogleDrive -. B 파일 내용 .-> Orchestrator
+    Orchestrator -. C 텍스트 분할 및 임베딩 .-> VectorStore
+
+     User:::user
+     WebApp:::webapp
+     APIServer:::backend
+     Orchestrator:::backend
+     VectorStore:::backend
+     GoogleDrive:::gcp
+     LLM:::gcp
+    classDef default fill:#f9f9f9,stroke:#333,stroke-width:2px
+    classDef user fill:#E3F2FD,stroke:#2196F3
+    classDef webapp fill:#E8F5E9,stroke:#4CAF50
+    classDef backend fill:#FFF3E0,stroke:#FF9800
+    classDef gcp fill:#F3E5F5,stroke:#9C27B0
+
+

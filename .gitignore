@@ -1,0 +1,13 @@
+**/.env
+**/HELP.md
+**/logs
+**/.vscode
+**/.idea
+**/.DS_Store
+**/credentials.json
+**/token.json
+**/__pycache__
+backend/.venv
+backend/venv
+frontend/node_modules
+TODO
