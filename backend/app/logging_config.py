@@ -3,9 +3,8 @@ import os
 
 def setup_logging():
     """
-    logging.conf 파일을 읽어 로깅 설정을 구성합니다.
+    logging.conf 파일을 읽어 로깅 설정을 구성
     """
-    # 로그 디렉토리 생성
     if not os.path.exists('logs'):
         os.makedirs('logs')
         

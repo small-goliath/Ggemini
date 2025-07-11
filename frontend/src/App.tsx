@@ -7,14 +7,12 @@ interface ChatMessage {
   message: string;
 }
 
-// Header Component
 const AppHeader = () => (
   <header className="app-header">
     <img src="/logo.png" alt="logo" className="logo" />
   </header>
 );
 
-// ChatHistory Component
 const ChatHistory = ({ chatHistory, loading }: { chatHistory: ChatMessage[], loading: boolean }) => {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -39,7 +37,6 @@ const ChatHistory = ({ chatHistory, loading }: { chatHistory: ChatMessage[], loa
   );
 };
 
-// MessageInput Component
 const MessageInput = ({
   question,
   setQuestion,
@@ -85,6 +82,7 @@ function App() {
     setLoading(true);
 
     try {
+      // TODO: uri 따로 관리
       const response = await axios.post<{ answer: string }>('http://localhost:8000/api/query', { question });
       setChatHistory([...newChatHistory, { type: 'bot', message: response.data.answer }]);
     } catch (error) {

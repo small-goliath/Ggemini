@@ -6,8 +6,10 @@
 **/.DS_Store
 **/credentials.json
 **/token.json
-**/__pycache__
-backend/.venv
-backend/venv
-frontend/node_modules
+**/__pycache__/
+backend/.venv/
+backend/.ruff_cache/
+frontend/node_modules/
+frontend/dist/
+docker/ollama_data/
 TODO

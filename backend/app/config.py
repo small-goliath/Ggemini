@@ -1,15 +1,43 @@
-import os
-from dotenv import load_dotenv
+from typing import Annotated, Any
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import (
+    AnyUrl,
+    BeforeValidator,
+    computed_field
+)
 
-# --env-file .config/.env 옵션 넣어서 실행하기 귀찮으면 넣고...
-dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.config', '.env')
-if os.path.exists(dotenv_path):
-    load_dotenv(dotenv_path=dotenv_path)
-else:
-    # 대체 경로
-    load_dotenv()
+def parse_cors(v: Any) -> list[str] | str:
+    if isinstance(v, str) and not v.startswith("["):
+        return [i.strip() for i in v.split(",")]
+    elif isinstance(v, list | str):
+        return v
+    raise ValueError(v)
 
-# 환경 변수에서 설정 값 가져오기
-GOOGLE_DRIVE_FOLDER_IDS = os.getenv("GOOGLE_DRIVE_FOLDER_IDS")
-LLM_MODEL = os.getenv("LLM_MODEL", "gemini-1.5-flash-latest")
-LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", 0.7))
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".config/.env",
+        env_ignore_empty=True,
+        extra="ignore",
+    )
+    FRONTEND_HOST: str = "http://localhost:5173"
+
+    BACKEND_CORS_ORIGINS: Annotated[
+        list[AnyUrl] | str, BeforeValidator(parse_cors)
+    ] = []
+
+    @computed_field
+    @property
+    def all_cors_origins(self) -> list[str]:
+        return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS] + [
+            self.FRONTEND_HOST
+        ]
+
+    PROJECT_NAME: str = "RPT"
+    GOOGLE_DRIVE_FOLDER_IDS: str
+    LLM_HOST: str = "http://127.0.0.1:11434"
+    LLM_MODEL: str = "llama3.3"
+    LLM_TEMPERATURE: float = 0.5
+    LLM_PROVIDER: str = "ollama"
+
+
+settings = Settings()

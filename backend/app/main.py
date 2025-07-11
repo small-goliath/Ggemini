@@ -1,13 +1,15 @@
 
+from app.service import rag_service
+from app.schemas import AskRequest
+from app.logging_config import setup_logging
+from app.config import settings
+
 from contextlib import asynccontextmanager
 import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.background import BackgroundScheduler
-from .service import rag_service
-from .schemas import AskRequest
-from .logging_config import setup_logging
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -43,12 +45,14 @@ async def shutdown_event():
     """
     logger.info("애플리케이션이 정상적으로 종료되었습니다.")
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    lifespan=lifespan,
+    title=settings.PROJECT_NAME
+)
 
-# CORS 미들웨어
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # TODO: 운영에서는 특정 도메인으로 제한
+    allow_origins=settings.all_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -78,8 +82,3 @@ async def ask_question(request: AskRequest):
 @app.get("/")
 def read_root():
     return {"message": "Q&A Backend is running."}
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-

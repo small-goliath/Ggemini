@@ -1,0 +1,33 @@
+services:
+  backend:
+    container_name: rpt-backend
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../backend:/app
+    networks:
+      - rpt-network
+
+  frontend:
+    container_name: rpt-frontend
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_BASE_URL=http://backend:8000
+    depends_on:
+      - backend
+    networks:
+      - rpt-network
+
+networks:
+  rpt-network:
+    driver: bridge

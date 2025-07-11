@@ -1,16 +1,14 @@
+from app.llm_factory import llm_factory
+from app.config import settings
+
 import logging
-import sys
-import os
 from langchain_google_community import GoogleDriveLoader
-# from langchain_community.document_loaders import GoogleDriveLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.chains import create_retrieval_chain
-from .config import GOOGLE_DRIVE_FOLDER_IDS, LLM_MODEL, LLM_TEMPERATURE
+from langchain.chains.retrieval import create_retrieval_chain
+
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +22,9 @@ class RAGService:
         LangChain RAG 파이프라인 초기화
         """
         try:
+            
             logger.info("Google Drive에서 문서를 로드합니다.")
-            folder_ids = [folder_id.strip() for folder_id in GOOGLE_DRIVE_FOLDER_IDS.split(',')]
+            folder_ids = [folder_id.strip() for folder_id in settings.GOOGLE_DRIVE_FOLDER_IDS.split(',')]
             
             all_docs = []
             for folder_id in folder_ids:
@@ -41,9 +40,10 @@ class RAGService:
                 except Exception as e:
                     logger.error(f"Folder '{folder_id}'에서 문서를 로드하는 중 오류 발생: {e}", exc_info=True)
 
-            if len(all_docs) == 0:
-                logger.info(f"로드된 문서가 없습니다.")
-                sys.exit(0)
+            if not all_docs:
+                logger.warning("로드된 문서가 없습니다. RAG 파이프라인을 초기화하지 않습니다.")
+                return
+            
             logger.info(f"{len(all_docs)}개의 문서를 로드했습니다.")
 
             logger.info("텍스트를 분할합니다.")
@@ -51,11 +51,8 @@ class RAGService:
             texts = text_splitter.split_documents(all_docs)
             logger.info(f"텍스트를 {len(texts)}개의 청크로 분할했습니다.")
 
-            logger.info("임베딩을 생성합니다.")
-            embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-
             logger.info("벡터 저장소를 생성합니다.")
-            self.vector_store = FAISS.from_documents(texts, embeddings)
+            self.vector_store = FAISS.from_documents(texts, llm_factory.embeddings)
             logger.info("벡터 저장소를 성공적으로 생성했습니다.")
 
             logger.info("Retriever 및 체인을 설정합니다.")
@@ -68,8 +65,8 @@ class RAGService:
                 
                 Question: {input}
                 """)
-            llm = ChatGoogleGenerativeAI(model=LLM_MODEL, temperature=LLM_TEMPERATURE)
-            document_chain = create_stuff_documents_chain(llm, prompt)
+            
+            document_chain = create_stuff_documents_chain(llm_factory.llm, prompt)
             self.retrieval_chain = create_retrieval_chain(retriever, document_chain)
             logger.info("Retriever 및 체인을 성공적으로 설정했습니다.")
 
